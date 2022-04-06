@@ -1,4 +1,4 @@
-# Polydodger Over 9000 Binary files
+# Polydodger Over 9000 Binary Files
 This repository is used to automate the deployment process of Binmatter's website.
 
 **Binmatter**
