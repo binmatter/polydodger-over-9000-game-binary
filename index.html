@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Polydodger</title>
+    <style>
+      html, body {
+        overflow: hidden;
+        max-width: 100%;
+        max-height: 100%;
+        width: 100%;
+        height: 100%;
+      }
+      html {
+        box-sizing: border-box;
+      }
+      *, *:before, *:after {
+        box-sizing: inherit;
+      }
+      body {
+        margin: 0;
+        background: #000 !important;
+      }
+      #gameContainer {
+        width: 100vw;
+        height: 100vh;
+      }
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      /* try to handle mobile dialog */
+      canvas + * {
+        z-index: 2;
+      }
+      .logo {
+          display: block;
+          max-width: 40vw;
+          max-height: 70vh;
+      }
+
+      .progress {
+          margin: 1.5em;
+          border: 1px solid rgb(255, 0, 119);
+          width: 30vw;
+          display: none;
+      }
+      .progress .full {
+          margin: 6px;
+          background: rgb(255, 0, 119);
+          height: 1em;
+          transform-origin: top left;
+      }
+
+      #loader {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: black;
+        color: white;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+    </style>
+  </head>
+
+  <body>
+    <div id="gameContainer"></div>
+    <div id="loader">
+      <img class="logo" src="logo.png">
+      <div class="progress"><div class="full"></div></div>
+      <div>
+        Be forewarned that some people face the possibility of experiencing photosensitive epileptic seizures.
+      </div>
+    </div>
+    <canvas id="canvas" width="1920" height="1080"></canvas>
+  </body>
+
+  <script src="Build/UnityLoader.js"></script>
+  
+  <script>
+    var gameInstance = UnityLoader.instantiate("gameContainer", "Build/Build.json", {
+      onProgress: UnityProgress,
+      Module: {
+        "webglContextAttributes": { "preserveDrawingBuffer": true },
+      }
+    });
+
+    function UnityProgress(gameInstance, progress) {
+      if (!gameInstance.Module) {
+        return;
+      }
+      var loader = document.querySelector("#loader");
+      if (!gameInstance.progress) {
+        var progress = document.querySelector("#loader .progress");
+        progress.style.display = "block";
+        gameInstance.progress = progress.querySelector(".full");
+      }
+      gameInstance.progress.style.transform = `scaleX(${progress})`;
+      if (progress === 1 && !gameInstance.removeTimeout) {
+        loader.style.display = "none";
+      }
+    }
+
+    function globalShareScreen() {
+      var originalCanvas = document.getElementById("#canvas");
+      var scaledCanvas = document.createElement('canvas');
+      scaledCanvas.width = 640;
+      scaledCanvas.height = (640/originalCanvas.width) * originalCanvas.height;
+
+      // scale original image to new canvas
+      var ctx = scaledCanvas.getContext('2d');
+      ctx.drawImage(originalCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+      var screenshot = scaledCanvas.toDataURL({
+        format: 'jpeg',
+        quality: 0.8
+      });
+
+      uploadImage(
+        screenshot,
+        function(xhr) {
+          const response = JSON.parse(xhr.response);
+          const params = [
+            'u=' + response.path,
+            'hashtag=#PolydodgerOver9000',
+          ].join('&');
+
+          window.open(
+            'https://www.facebook.com/sharer.php?' + params,
+            'sharer',
+            'toolbar=0,status=0,width=960,height=720',
+          );
+        },
+        function(xhr) {
+          console.log(xhr);
+        }
+      );
+    }
+
+    function uploadImage(imageUrl, successCallback, failureCallback) {
+      var xhr = new XMLHttpRequest();
+
+      var params = new FormData();
+      params.set('image', imageUrl);
+      params.set('app', 'polydodger');
+
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+          if (xhr.status == 200) {
+            if (successCallback) successCallback(xhr);
+          } else {
+            if (failureCallback) failureCallback(xhr);
+          }
+        }
+      };
+
+      xhr.open("POST", "https://www.binmatter.com/polydodger/screenshot.php", true);
+      xhr.send(params);
+    }
+  </script>
+
+</html>
+
